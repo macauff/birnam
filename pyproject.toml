@@ -1,0 +1,32 @@
+[build-system]
+requires = [
+    "scikit-build-core",
+    "numpy",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "birnam"
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "pandas",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest-astropy",
+]
+docs = [
+    "sphinx-astropy",
+    "six",
+]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+skip = [
+    "*musl*",  # we don't support MUSL Linux
+    "pp*",  # we don't support PyPy
+]

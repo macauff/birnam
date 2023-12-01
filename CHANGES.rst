@@ -4,6 +4,8 @@
 General
 ^^^^^^^
 
+- Initial implementation of birnam. [#1]
+
 New Features
 ^^^^^^^^^^^^
 

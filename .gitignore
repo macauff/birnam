@@ -1,3 +1,8 @@
 **.DS_Store
 **._*
 **~
+
+.tmp
+.tox
+
+__pycache__/

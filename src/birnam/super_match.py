@@ -4,6 +4,8 @@ This module provides the high-level framework for the creation of multi-catalogu
 "super-matches" for one primary dataset.
 '''
 
+import itertools
+import multiprocessing
 import os
 
 import numpy as np
@@ -67,6 +69,8 @@ class SuperMatch():
         For each cross-match run, the zero-indexed column number of the
         probability of the primary source's non-match to the respective
         catalogues.
+    n_pool : integer
+        Number of threads to use for chunk-level super-match multiprocessing.
     '''
 
     def __init__(self, top_level_folder, primary_catalogue_name, primary_catalogue_input_location,
@@ -75,7 +79,7 @@ class SuperMatch():
                  list_of_match_filenames, list_of_non_match_filenames,
                  list_of_match_primary_column_ids, list_of_match_secondary_column_ids,
                  list_of_match_probability_ids, list_of_non_match_primary_column_ids,
-                 list_of_non_match_probability_ids):
+                 list_of_non_match_probability_ids, n_pool):
         '''
         At the top level of the super-match we assume that *all* cross-matches
         have the same structure within their top-level folder, so we might have
@@ -102,27 +106,46 @@ class SuperMatch():
         chunk_folders = os.listdir(primary_catalogue_input_location)
 
         # TODO: folder creation, checking, etc.
-        # TODO: parallelisation of chunk-level super-match creations.
-        for i in range(len(chunk_folders)):
-            # /primary/catalogue/input/location/chunk_folder/primary_catalogue_filename
-            primary_catalogue_chunk_location = os.path.join(
-                primary_catalogue_input_location, chunk_folders[i], primary_catalogue_filename)
-            # /top/level/folder/match_pair_folder/chunk_folder/
-            list_of_secondary_chunk_folders = [
-                os.path.join(top_level_folder, list_of_secondary_match_folders[j], chunk_folders[i])
-                for j in range(len(list_of_secondary_match_folders))]
-            # /super/match/save/folder/chunk_folder/name_super_match.csv
-            super_match_chunk_save_filename = os.path.join(
-                super_match_save_folder, chunk_folders[i],
-                f'{primary_catalogue_name}_super_match.csv')
-            os.makedirs(os.path.dirname(super_match_chunk_save_filename), exist_ok=True)
-            self.run_super_match(
-                primary_catalogue_name, primary_catalogue_chunk_location,
-                primary_catalogue_input_column_id, super_match_chunk_save_filename,
-                list_of_catalogue_names, list_of_secondary_chunk_folders, list_of_match_filenames,
-                list_of_non_match_filenames, list_of_match_primary_column_ids,
-                list_of_match_secondary_column_ids, list_of_match_probability_ids,
-                list_of_non_match_primary_column_ids, list_of_non_match_probability_ids)
+        counter = np.arange(0, len(chunk_folders))
+        expand_constants = [itertools.repeat(item) for item in [
+            primary_catalogue_input_location, chunk_folders, primary_catalogue_filename, top_level_folder,
+            list_of_secondary_match_folders, super_match_save_folder, primary_catalogue_name,
+            primary_catalogue_input_column_id, list_of_catalogue_names, list_of_match_filenames,
+            list_of_non_match_filenames, list_of_match_primary_column_ids,
+            list_of_match_secondary_column_ids, list_of_match_probability_ids,
+            list_of_non_match_primary_column_ids, list_of_non_match_probability_ids]]
+        iter_group = zip(counter, *expand_constants)
+        with multiprocessing.Pool(n_pool) as pool:
+            for _ in pool.imap_unordered(self.single_chunk_super_match, iter_group,
+                                         chunksize=max(1, len(counter) // n_pool)):
+                pass
+
+    def single_chunk_super_match(self, p):
+        [i, primary_catalogue_input_location, chunk_folders, primary_catalogue_filename, top_level_folder,
+         list_of_secondary_match_folders, super_match_save_folder, primary_catalogue_name,
+         primary_catalogue_input_column_id, list_of_catalogue_names, list_of_match_filenames,
+         list_of_non_match_filenames, list_of_match_primary_column_ids,
+         list_of_match_secondary_column_ids, list_of_match_probability_ids,
+         list_of_non_match_primary_column_ids, list_of_non_match_probability_ids] = p
+        # /primary/catalogue/input/location/chunk_folder/primary_catalogue_filename
+        primary_catalogue_chunk_location = os.path.join(
+            primary_catalogue_input_location, chunk_folders[i], primary_catalogue_filename)
+        # /top/level/folder/match_pair_folder/chunk_folder/
+        list_of_secondary_chunk_folders = [
+            os.path.join(top_level_folder, list_of_secondary_match_folders[j], chunk_folders[i])
+            for j in range(len(list_of_secondary_match_folders))]
+        # /super/match/save/folder/chunk_folder/name_super_match.csv
+        super_match_chunk_save_filename = os.path.join(
+            super_match_save_folder, chunk_folders[i],
+            f'{primary_catalogue_name}_super_match.csv')
+        os.makedirs(os.path.dirname(super_match_chunk_save_filename), exist_ok=True)
+        self.run_super_match(
+            primary_catalogue_name, primary_catalogue_chunk_location,
+            primary_catalogue_input_column_id, super_match_chunk_save_filename,
+            list_of_catalogue_names, list_of_secondary_chunk_folders, list_of_match_filenames,
+            list_of_non_match_filenames, list_of_match_primary_column_ids,
+            list_of_match_secondary_column_ids, list_of_match_probability_ids,
+            list_of_non_match_primary_column_ids, list_of_non_match_probability_ids)
 
     def run_super_match(self, primary_catalogue_name, primary_catalogue_input_location,
                         primary_catalogue_input_column_id, super_match_save_filename,

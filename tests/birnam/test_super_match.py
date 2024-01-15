@@ -74,11 +74,9 @@ class TestSuperMatch():
             secondary_ids.append(_2nd_ids)
             probabilities.append(_probs)
 
-        SuperMatch('top_level_folder', 'primary_cat', 'catalogue_folder',
-                   1, 'primary_catalogue.csv',
-                   'super_match_save_folder', ['A', 'B'], ['cm_1', 'cm_2'],
-                   ['matches.csv', 'matches.csv'],
-                   ['non_matches.csv', 'non_matches.csv'], [0, 0], [1, 1], [2, 2], [0, 0], [1, 1])
+        SuperMatch('top_level_folder', 'primary_cat', 'catalogue_folder', 1, 'primary_catalogue.csv',
+                   'super_match_save_folder', ['A', 'B'], ['cm_1', 'cm_2'], ['matches.csv', 'matches.csv'],
+                   ['non_matches.csv', 'non_matches.csv'], [0, 0], [1, 1], [2, 2], [0, 0], [1, 1], 2)
 
         for i in range(3):
             assert os.path.exists(f'super_match_save_folder/chunk_{i}/primary_cat_super_match.csv')

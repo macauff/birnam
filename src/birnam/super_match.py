@@ -42,11 +42,6 @@ class SuperMatch():
         List of the locations on disk of where each respective cross-match,
         ``primary_catalogue_name``-to-``list_of_catalogues``, has been saved,
         inside ``top_level_folder``, in the same order as ``list_of_catalogues``.
-    chunk_output_save_folder : string
-        Folder within each cross-match's chunk sub-folder into which output
-        match and non-match files have been saved. These should be common across
-        all cross-match pairings, and hence this is a single string instead
-        of a list.
     list_of_match_filenames : list or numpy.ndarray of strings
         The filename, including extension, of each respective cross-match's
         "match" output file.
@@ -77,14 +72,14 @@ class SuperMatch():
     def __init__(self, top_level_folder, primary_catalogue_name, primary_catalogue_input_location,
                  primary_catalogue_input_column_id, primary_catalogue_filename,
                  super_match_save_folder, list_of_catalogue_names, list_of_secondary_match_folders,
-                 chunk_output_save_folder, list_of_match_filenames, list_of_non_match_filenames,
+                 list_of_match_filenames, list_of_non_match_filenames,
                  list_of_match_primary_column_ids, list_of_match_secondary_column_ids,
                  list_of_match_probability_ids, list_of_non_match_primary_column_ids,
                  list_of_non_match_probability_ids):
         '''
         At the top level of the super-match we assume that *all* cross-matches
         have the same structure within their top-level folder, so we might have
-        /top/level/folder/match_pair_folder/chunk_folder/chunk_output_save_folder/match_name
+        /top/level/folder/match_pair_folder/chunk_folder/match_name
         for all match pairs and all chunks, and
         /primary/catalogue/input/location/chunk_folder/primary_catalogue_filename
         for all chunks (and hence the same primary catalogue was used in every
@@ -112,10 +107,9 @@ class SuperMatch():
             # /primary/catalogue/input/location/chunk_folder/primary_catalogue_filename
             primary_catalogue_chunk_location = os.path.join(
                 primary_catalogue_input_location, chunk_folders[i], primary_catalogue_filename)
-            # /top/level/folder/match_pair_folder/chunk_folder/chunk_output_save_folder/
+            # /top/level/folder/match_pair_folder/chunk_folder/
             list_of_secondary_chunk_folders = [
-                os.path.join(top_level_folder, list_of_secondary_match_folders[j],
-                             chunk_folders[i], chunk_output_save_folder)
+                os.path.join(top_level_folder, list_of_secondary_match_folders[j], chunk_folders[i])
                 for j in range(len(list_of_secondary_match_folders))]
             # /super/match/save/folder/chunk_folder/name_super_match.csv
             super_match_chunk_save_filename = os.path.join(

@@ -66,10 +66,10 @@ class TestSuperMatch():
                 probs = rng.uniform(0, 1, size=n_rows)
                 _probs.append(probs)
                 self.make_match_inputs_outputs(
-                    'matches', f'top_level_folder/cm_{j}/chunk_{i}/pairing',
+                    'matches', f'top_level_folder/cm_{j}/chunk_{i}',
                     [primary_ID[:n_matches], secondary_ID, probs[:n_matches]], n_matches)
                 self.make_match_inputs_outputs(
-                    'non-matches', f'top_level_folder/cm_{j}/chunk_{i}/pairing',
+                    'non-matches', f'top_level_folder/cm_{j}/chunk_{i}',
                     [primary_ID[n_matches:], probs[n_matches:]], n_nonmatches)
             secondary_ids.append(_2nd_ids)
             probabilities.append(_probs)
@@ -77,7 +77,7 @@ class TestSuperMatch():
         SuperMatch('top_level_folder', 'primary_cat', 'catalogue_folder',
                    1, 'primary_catalogue.csv',
                    'super_match_save_folder', ['A', 'B'], ['cm_1', 'cm_2'],
-                   'pairing', ['matches.csv', 'matches.csv'],
+                   ['matches.csv', 'matches.csv'],
                    ['non_matches.csv', 'non_matches.csv'], [0, 0], [1, 1], [2, 2], [0, 0], [1, 1])
 
         for i in range(3):

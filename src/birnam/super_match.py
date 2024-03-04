@@ -105,7 +105,7 @@ class SuperMatch():
         # since they should all be enforced to be the same.
         chunk_folders = os.listdir(primary_catalogue_input_location)
 
-        # TODO: folder creation, checking, etc.
+        # TODO: folder creation, checking, etc.  # pylint: disable=fixme
         counter = np.arange(0, len(chunk_folders))
         expand_constants = [itertools.repeat(item) for item in [
             primary_catalogue_input_location, chunk_folders, primary_catalogue_filename, top_level_folder,
@@ -121,6 +121,15 @@ class SuperMatch():
                 pass
 
     def single_chunk_super_match(self, p):
+        '''
+        Helper function for the parallel loop, extracting a individual chunks
+        and passing through to the single-chunk function.
+
+        Parameters
+        ----------
+        p : list
+            List of the variables needed to extract one chunk's information.
+        '''
         [i, primary_catalogue_input_location, chunk_folders, primary_catalogue_filename, top_level_folder,
          list_of_secondary_match_folders, super_match_save_folder, primary_catalogue_name,
          primary_catalogue_input_column_id, list_of_catalogue_names, list_of_match_filenames,
@@ -205,9 +214,9 @@ class SuperMatch():
         '''
 
         # Create output data array in memory.
-        primary_input_catalogue_IDs = self.load_catalogue_column(
+        primary_input_catalogue_ids = self.load_catalogue_column(
             primary_catalogue_input_location, primary_catalogue_input_column_id)
-        n_rows = len(primary_input_catalogue_IDs)
+        n_rows = len(primary_input_catalogue_ids)
         # shape should be n_rows by (primary ID, ID*n, p_tot, ID_bad, and p_bad),
         # but the structured array handles the column width internally.
         shape = (n_rows,)
@@ -220,43 +229,43 @@ class SuperMatch():
         super_match = np.empty(shape=shape, dtype=dtype)
 
         # Populate left-hand primary ID, p(tot) = 1, p(without bad) = 1.
-        super_match[f'{primary_catalogue_name} ID'] = primary_input_catalogue_IDs
+        super_match[f'{primary_catalogue_name} ID'] = primary_input_catalogue_ids
         super_match['Probability'] = 1
         super_match['Probability without bad catalogue'] = 1
         super_match['Bad catalogue'] = 'N/A'
 
         # Loop over catalogues, updating ID and p(tot), also updating
         # p(without bad) and bad_ID.
-        for i in range(len(list_of_catalogue_names)):
+        for i in range(len(list_of_catalogue_names)):  # pylint: disable=consider-using-enumerate
             # Extract the match and non-match IDs (match x2, non-match x1) and
             # (non-)match probabilities.
-            primary_match_IDs = self.load_catalogue_column(
+            primary_match_ids = self.load_catalogue_column(
                 os.path.join(list_of_cross_match_folders[i], list_of_match_filenames[i]),
                 list_of_match_primary_column_ids[i])
-            secondary_match_IDs = self.load_catalogue_column(
+            secondary_match_ids = self.load_catalogue_column(
                 os.path.join(list_of_cross_match_folders[i], list_of_match_filenames[i]),
                 list_of_match_secondary_column_ids[i])
             match_probs = self.load_catalogue_column(
                 os.path.join(list_of_cross_match_folders[i], list_of_match_filenames[i]),
                 list_of_match_probability_ids[i])
 
-            primary_non_match_IDs = self.load_catalogue_column(
+            primary_non_match_ids = self.load_catalogue_column(
                 os.path.join(list_of_cross_match_folders[i], list_of_non_match_filenames[i]),
                 list_of_non_match_primary_column_ids[i])
             non_match_probs = self.load_catalogue_column(
                 os.path.join(list_of_cross_match_folders[i], list_of_non_match_filenames[i]),
                 list_of_non_match_probability_ids[i])
 
-            for j in range(len(primary_match_IDs)):
-                ind = np.where(primary_match_IDs[j] == primary_input_catalogue_IDs)[0][0]
+            for j in range(len(primary_match_ids)):  # pylint: disable=consider-using-enumerate
+                ind = np.where(primary_match_ids[j] == primary_input_catalogue_ids)[0][0]
                 super_match[
-                    f'{list_of_catalogue_names[i]} ID'][ind] = secondary_match_IDs[j]
+                    f'{list_of_catalogue_names[i]} ID'][ind] = secondary_match_ids[j]
                 super_match['Probability'][ind] *= match_probs[j]
 
                 # If this is the worst posterior we've seen -- but it's also
                 # below 50% -- then we change the 'bad catalogue' columns,
                 # otherwise we just keep ticking that extra posterior over.
-                # TODO: relax hard-coded 50% criterion for 'badness'.
+                # TODO: relax hard-coded 50% criterion for 'badness'.  # pylint: disable=fixme
                 if (match_probs[j] < super_match['Probability without bad catalogue'][ind] and
                         match_probs[j] < 0.5):
                     super_match['Probability without bad catalogue'][ind] = super_match[
@@ -265,8 +274,8 @@ class SuperMatch():
                 else:
                     super_match['Probability without bad catalogue'][ind] *= match_probs[j]
 
-            for j in range(len(primary_non_match_IDs)):
-                ind = np.where(primary_non_match_IDs[j] == primary_input_catalogue_IDs)[0][0]
+            for j in range(len(primary_non_match_ids)):  # pylint: disable=consider-using-enumerate
+                ind = np.where(primary_non_match_ids[j] == primary_input_catalogue_ids)[0][0]
                 super_match[f'{list_of_catalogue_names[i]} ID'][ind] = 'N/A'
                 super_match['Probability'][ind] *= non_match_probs[j]
 
@@ -284,7 +293,7 @@ class SuperMatch():
         x = pd.DataFrame(super_match, columns=[p[0] for p in dtype])
         x.to_csv(super_match_save_filename, encoding='utf-8', index=False, header=False)
 
-    def load_catalogue_column(self, loc, ID):
+    def load_catalogue_column(self, loc, id_):
         '''
         Load a single column from a catalogue on disk into memory.
 
@@ -292,7 +301,7 @@ class SuperMatch():
         ----------
         loc : string
             Full location on disk of file to load a single column of.
-        ID : int
+        id_ : int
             The zero-indexed column of the file at ``loc`` to load.
 
         Returns
@@ -301,7 +310,7 @@ class SuperMatch():
             One-dimensional array of the value in the chosen ``ID``-th column
             in each row of the file.
         '''
-        # TODO: relax .csv hard-coded assumption.
-        # TODO: add header toggle.
-        csv_column = pd.read_csv(loc, header=None, usecols=[ID])[ID].values
+        # TODO: relax .csv hard-coded assumption.  # pylint: disable=fixme
+        # TODO: add header toggle.  # pylint: disable=fixme
+        csv_column = pd.read_csv(loc, header=None, usecols=[id_])[id_].values
         return csv_column

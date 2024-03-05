@@ -7,6 +7,7 @@ import os
 
 import numpy as np
 from numpy.testing import assert_allclose
+
 from birnam import SuperMatch  # pylint: disable=import-error
 
 

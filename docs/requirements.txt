@@ -1,0 +1,5 @@
+sphinx-astropy
+sphinx-fortran
+sphinx-rtd-theme
+sphinx-autoapi
+numpy
